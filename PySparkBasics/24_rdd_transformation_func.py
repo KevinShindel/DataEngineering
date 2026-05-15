@@ -50,7 +50,7 @@ if __name__ == '__main__':
     # rdd.reduceByKey() # merges the values for each key with the function specified. In our example, it reduces the word string by applying the sum function on value. The result of our RDD contains unique words and their count.
 
     # Aggregation Functions
-    # rdd.aggregate(3) # TODO:
+    # rdd.aggregate(3)
 
     # rdd.fold()
     # fold() is similar to reduce() except it takes a ‘Zero value‘ as an initial value for each partition.
