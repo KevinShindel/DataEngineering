@@ -3,7 +3,7 @@ import os
 from pyspark import SparkConf, SparkContext
 
 
-def absoluteFilePaths(directory):
+def absolute_file_paths(directory):
     for dir_path, _, filenames in os.walk(directory):
         for f in filenames:
             yield os.path.abspath(os.path.join(dir_path, f))
@@ -16,7 +16,7 @@ if __name__ == '__main__':
     We take the file paths of these three files as comma separated valued in a single string literal. 
     Then using textFile() method, we can read the content of all these three text files into a single RDD.
     """
-    files = ','.join(list(absoluteFilePaths('data')))
+    files = ','.join(list(absolute_file_paths('data')))
     print(files)
     conf = SparkConf().setAppName("Read Multiple Text Files to RDD").setMaster("local[2]").set("spark.executor.memory","2g")
     sc = SparkContext(conf=conf)
