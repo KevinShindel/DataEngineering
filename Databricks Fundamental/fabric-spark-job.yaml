@@ -1,0 +1,46 @@
+# YAML file to define a job in Microsoft Fabric with PySpark execution
+name: PySparkFabricJob  # Name of the job
+description: A demo job to run a PySpark script in Microsoft Fabric.  # Description of the job
+
+type: pipeline  # Type of job - defining it as a pipeline
+version: 1.0  # Version of the YAML schema
+
+triggers:  # Triggering mechanism
+  - triggerType: Manual  # This job will run manually; no automated scheduling
+
+parameters:  # Parameters passed to the pipeline during execution
+  inputFilePath:  # Parameter name
+    type: string  # Data type for the parameter
+    defaultValue: "data/input.csv"  # Default value for the file path
+    description: "Path to the input file in the lakehouse."
+  outputFilePath:  # Parameter to define output path
+    type: string
+    defaultValue: "data/output.csv"
+    description: "Path where the processed file will be stored."
+
+activities:  # List of activities to be performed by the job
+  - name: RunPySparkScript  # Activity name
+    type: Notebook  # Activity type - execute a notebook or PySpark script
+    description: Execute a PySpark script to process data.
+
+    # Specify notebook or script settings
+    settings:
+      notebookPath: "lakehouse/notebooks/my_pyspark_script.ipynb"  # Path to notebook
+      sparkType: FabricSpark  # Define the compute environment, e.g., FabricSpark (Microsoft Fabric's Spark engine)
+      parameters:  # Pass the parameters to the notebook/script
+        inputFilePath: "@{parameters.inputFilePath}"  # Use the defined parameter for input file path
+        outputFilePath: "@{parameters.outputFilePath}"  # Use the defined parameter for output file path
+
+  - name: NotifyActivity  # Additional activity
+    type: Notification  # Activity type - send a notification
+    description: Notify the user upon completion of the PySpark task.
+    settings:
+      emailRecipient: "user@contoso.com"  # Email address of the recipient
+      message: "PySpark script execution has completed successfully and data is saved to the specified output path."
+
+# Optional metadata about the job
+tags:
+  - PySpark
+  - MicrosoftFabric
+  - BigData
+  - DataPipeline
