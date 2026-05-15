@@ -12,7 +12,7 @@ if __name__ == '__main__':
     #  Load training data
     dataset = spark.read.format("libsvm").load(path)
 
-    # Trains a LDA model.
+    # Trains an LDA model.
     lda = LDA(k=10, maxIter=10)
     model = lda.fit(dataset)
 

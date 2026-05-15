@@ -46,8 +46,8 @@ if __name__ == '__main__':
     assembled_data.show(2)
 
     # Now that all columns are transformed into a single feature vector we need to standardize the data to bring them
-    # to a comparable scale. E.g. Balance can have a scale from 10–1000 whereas balance frequency has a scale from
-    # 0–1 say. Euclidean distance is always impacted more by variables on a higher scale, hence it’s important
+    # to a comparable scale. E.g. Balance can have a scale from 10 to 1000 whereas balance frequency has a scale from
+    # 0 to 1 say. Euclidean distance is always impacted more by variables on a higher scale, hence it’s important
     # to scale the variables out.
     scale = StandardScaler(inputCol='features', outputCol='standardized')
     data_scale = scale.fit(assembled_data)

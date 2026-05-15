@@ -17,8 +17,8 @@ if __name__ == '__main__':
 
     # MAP Functions
     rdd.map(lambda x: x**2)
-    rdd.flatMap(lambda x: x**2) # Returns flattern map meaning if you have a dataset with array, it converts each elements in a array as a row. In other words it return 0 or more items in output for each element in dataset.
-    rdd.mapPartitions(lambda x: x**2) # Similar to map, but executs transformation function on each partition, This gives better performance than map function
+    rdd.flatMap(lambda x: x**2) # Returns flatten map meaning if you have a dataset with array, it converts each element in an array as a row. In other words it returns 0 or more items in output for each element in dataset.
+    rdd.mapPartitions(lambda x: x**2) # Similar to map, but executes transformation function on each partition, This gives better performance than map function
     rdd.mapPartitionsWithIndex(lambda x: x**2) # Similar to map Partitions, but also provides func with an integer value representing the index of the partition
 
     (res1, res2) = rdd.randomSplit([0.3, 0.7])
@@ -36,10 +36,10 @@ if __name__ == '__main__':
     print('intersection: ', intersect)
 
     # Partitions Operations
-    result = rdd.repartition(2) # Return a dataset with number of partition specified in the argument. This operation reshuffles the RDD randamly, It could either return lesser or more partioned RDD based on the input supplied.
+    result = rdd.repartition(2) # Return a dataset with number of partition specified in the argument. This operation reshuffles the RDD randomly, It could either return lesser or more portioned RDD based on the input supplied.
     print('repartition partitions: ', result.getNumPartitions())
 
-    result = rdd.coalesce(1) #  Similar to repartition by operates better when we want to the decrease the partitions. Betterment acheives by reshuffling the data from fewer nodes compared with all nodes by repartition.
+    result = rdd.coalesce(1) #  Similar to repartition by operates better when we want to the decrease the partitions. Betterment achieves by reshuffling the data from fewer nodes compared with all nodes by repartition.
     print('coalesce partition: ', result.getNumPartitions())
 
     # Sorting Operations
