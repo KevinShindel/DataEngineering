@@ -66,6 +66,8 @@ cleaned_df = df.na.drop(
 
 ### UDF
 
+- by decorator
+
 ```python
 
 @udf("string")
@@ -73,4 +75,30 @@ def make_greeting(name):
     return f'Hello {name}!'
 
 df.select(make_greeting(F.col('name')))
+```
+
+- by function wrapper
+
+```sql
+
+udf_func = udf(my_func)
+
+sales_df = sales_df.withColumn('processed_col', udf_func(F.col('column_name')))
+```
+
+- by pandas udf
+```python
+from pyspark.sql.functions import pandas_udf
+import pandas as pd
+
+# define pandas udf
+@pandas_udf('string')
+def pandas_vectorized_udf(row: pd.Series):
+    return row.str[0]
+
+# alternative
+def pandas_vectorized_udf(email):
+    return email.str[0]
+
+vectorized_udf = pandas_udf(pandas_vectorized_udf, 'string')
 ```
