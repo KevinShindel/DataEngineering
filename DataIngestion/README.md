@@ -1,3 +1,52 @@
+## Difference between read_files and cloud_files
+
+| Feature                             | `read_files`               | `cloud_files`                                    |
+|-------------------------------------|----------------------------|--------------------------------------------------|
+| Purpose                             | Read files from storage    | Incrementally ingest new files using Auto Loader |
+| Streaming Support                   | Batch and streaming syntax | Designed for streaming (Auto Loader)             |
+| Tracks processed files              | ❌ No                       | ✅ Yes (checkpoint/state)                         |
+| Detects newly arrived files         | ❌ No                       | ✅ Yes                                            |
+| Schema evolution                    | Basic                      | Advanced automatic schema evolution              |
+| File discovery                      | Directory listing          | Optimized directory listing / notifications      |
+| Scalability                         | Small to medium datasets   | Very large datasets (millions/billions of files) |
+| Recommended for Bronze ingestion    | Sometimes                  | Yes                                              |
+| Uses Auto Loader                    | No                         | Yes                                              |
+| Supports file notification services | No                         | Yes (AWS SQS, Azure Queue, GCP Pub/Sub)          |
+
+## Performance evaluation
+
+| Scenario         | read_files | cloud_files |
+|------------------|------------|-------------|
+| 100 files        | ⭐⭐⭐⭐⭐      | ⭐⭐⭐⭐        |
+| 10,000 files     | ⭐⭐⭐        | ⭐⭐⭐⭐⭐       |
+| 10 million files | ⭐          | ⭐⭐⭐⭐⭐       |
+
+## Decision making
+
+| Scenario                                   | CTAS | COPY INTO | Streaming Table | MERGE INTO |
+|--------------------------------------------|------|-----------|-----------------|------------|
+| One-time historical load                   | ✅    | ❌         | ❌               | ❌          |
+| Load only new files                        | ❌    | ✅         | ✅               | ❌          |
+| Continuous/managed ingestion               | ❌    | ❌         | ✅               | ❌          |
+| Insert new rows only                       | ⚠️   | ✅         | ✅               | ⚠️         |
+| Update existing rows                       | ❌    | ❌         | ❌               | ✅          |
+| Implement Slowly Changing Dimensions (SCD) | ❌    | ❌         | ❌               | ✅          |
+| Bronze ingestion                           | ⚠️   | ✅         | ✅ Best          | ❌          |
+| Silver upsert/deduplication                | ❌    | ❌         | ⚠️              | ✅ Best     |
+
+| Requirement                                | CTAS             | COPY INTO | Streaming Table |
+|--------------------------------------------|------------------|-----------|-----------------|
+| One-time historical load                   | ✅ Excellent      | ❌         | ❌               |
+| Full refresh every run                     | ✅ Excellent      | ❌         | ❌               |
+| Incremental file ingestion                 | ❌                | ✅         | ✅               |
+| Handles schema evolution well              | ❌                | Limited   | ✅               |
+| Production Medallion pipeline              | ❌                | Possible  | ✅ Best fit      |
+| Automatic downstream dependency management | ❌                | ❌         | ✅               |
+| Data quality expectations                  | ❌                | ❌         | ✅               |
+| Can run on a weekly schedule               | ⚠️ (full reload) | ✅         | ✅               |
+
+
+
 
 ## Batch Processing
 
@@ -9,6 +58,10 @@ spark.read.load(
     inferSchema=True
 )
 ```
+#### CTAS
+
+- create delta table by default from files
+- JSON, CSV, XML, TEXT, BINARYFILE, PARQUET, AVRO, ORC
 
 ```sql
 CREATE TABLE new_table AS 
@@ -21,6 +74,10 @@ FROM read_files(
 )
 ```
 
+#### COPY INTO
+
+- legacy method for Incremental batch processing
+
 ```sql
 CREATE TABLE table_name; 
 COPY INTO table_name
@@ -31,6 +88,7 @@ COPY_OPTIONS ('mergeSchema' 'true') -- for parquet only
 ```
 
 ## Incremental Processing
+- Only new data is ingested
 
 ```python
 spark.readStream.load(
@@ -41,6 +99,9 @@ spark.readStream.load(
     # AutoLoader with timed trigger can be used for incremental processing
 )
 ```
+
+#### Auto-Loader
+- for Incremental batch or Streaming
 
 ```sql
 CREATE OR REFRESH STREAMING TABLE streaming_table 
@@ -54,6 +115,9 @@ CREATE OR REFRESH STREAMING TABLE streaming_table
 ```
 
 ## Streaming Processing
+- Continuously load data
+- Micro-batch
+- Frequent interval
 
 ```python
 (spark
@@ -160,3 +224,14 @@ FROM read_files(
 ### Rescued Data
 
 ```sql
+SELECT 
+    CAST(_rescued_data:_c0 AS BIGINT) AS order_id,
+    *
+FROM read_files(
+    "/Volumes/data/file.csv",
+    format="csv",
+    header=True,
+    inferSchema=True,
+    rescuedDataColumn="_rescued_data"
+    )
+```   
