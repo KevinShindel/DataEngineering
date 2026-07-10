@@ -151,7 +151,9 @@ CREATE OR REFRESH STREAMING TABLE streaming_table
 SELECT * 
 FROM parquet.`/Volumes/data/file.parquet`
 ```
+
 # Formats: CSV, AVRO, JSON, XML, TXT, PARQUET, ORC, DELTA, etc.
+
 ```sql
 SELECT *
 FROM read_files(
@@ -235,3 +237,146 @@ FROM read_files(
     rescuedDataColumn="_rescued_data"
     )
 ```   
+
+##  Default Flow vs. Explicit Flow
+> Most of the time, a flow is created automatically and implicitly when you define a streaming table or materialized view. This is the default flow — it shares the name of its target table.
+> You can also create explicit flows separately from the table definition. This is required when you need to write to an existing table from a new source, or when multiple sources need to converge into one target.
+
+```sql
+-- Default Flow (implicit)
+-- Table and flow created in one step. The flow takes the name of the table.
+CREATE OR REFRESH STREAMING TABLE target_table
+AS SELECT *
+FROM STREAM source_table;
+```
+
+```sql
+-- Explicit Flow (separate definition)
+-- Table defined first. Flow defined separately and attached to the target by name.
+CREATE OR REFRESH STREAMING TABLE target_table;
+CREATE FLOW my_flow
+AS INSERT INTO target_table BY NAME
+SELECT * FROM STREAM source_table;
+```
+
+Multi-Flow vs. UNION — Why It Matters
+A common alternative to multi-flow is combining sources with a UNION clause inside a single streaming table definition. For incremental pipelines, this creates critical limitations.
+
+❌ UNION Approach
+All sources share a single checkpoint
+Adding a new source requires a full refresh to reprocess everything
+A failure in one source can block all others
+Harder to track lineage per source
+Complex error handling across multiple data sources
+Limited scalability as source count increases
+
+✅ Multi-Flow Approach
+Each flow has its own independent checkpoint
+New sources can be added without a full refresh
+Flows are isolated — one source failure does not affect others
+Clear per-source lineage and monitoring
+Independent error handling and recovery per source
+Better scalability and maintainability
+
+### Data Quality Expectations
+
+Defining Expectations on Streaming Tables
+In Spark Declarative Pipelines, constraints are defined inline in the table's column definition block using CONSTRAINT ... EXPECT. There are three violation modes that control what happens when a record fails a rule:
+
+🟢
+WARN (default — no ON VIOLATION clause)
+Invalid rows are kept in the table. A warning metric is logged in the pipeline event log. Use for monitoring without blocking data.
+CONSTRAINT valid_field EXPECT (field IS NOT NULL)
+🟡
+DROP ROW
+Invalid rows are removed from the table. Dropped records are counted in metrics but do not appear in the final dataset.
+CONSTRAINT valid_qty EXPECT (qty > 0) ON VIOLATION DROP ROW
+🔴
+FAIL UPDATE
+The entire pipeline update is halted when even one record violates the rule. Use for critical fields where any violation indicates a serious upstream issue.
+CONSTRAINT not_null_id EXPECT (id IS NOT NULL) ON VIOLATION FAIL UPDATE
+
+
+```sql
+--  Expectation Implementation Example
+-- Here's a comprehensive example showing how to implement data quality expectations on a streaming table:
+
+CREATE OR REFRESH STREAMING TABLE streaming_table
+  (
+    CONSTRAINT valid_qty        EXPECT (qty >= 0)                     ON VIOLATION DROP ROW,
+    CONSTRAINT valid_amount     EXPECT (total_amount >= 0)            ON VIOLATION DROP ROW,
+    CONSTRAINT not_null_ts      EXPECT (order_timestamp IS NOT NULL) ON VIOLATION FAIL UPDATE,
+    CONSTRAINT valid_email      EXPECT (customer_email RLIKE '^[^@]+@[^@]+\\.[^@]+$'),
+    CONSTRAINT reasonable_qty   EXPECT (qty <= 1000)                 ON VIOLATION WARN
+  )
+```
+
+### Monitoring and Observability
+
+```sql
+-- Going Deeper — System Tables and Event Logs
+-- The pipeline event log records one row per flow update, capturing both throughput metrics and per-constraint expectation results. You can query it directly to build custom monitoring dashboards or alert pipelines.
+SELECT timestamp, table_name, output_rows,
+       data_quality.expectations
+FROM event_log("pipeline_id")
+WHERE event_type = 'flow_progress'
+  AND data_quality.expectations IS NOT NULL
+ORDER BY timestamp DESC;
+```
+
+## Liquid Clustering in Spark Declarative Pipelines
+- D1. What is Liquid Clustering?
+Liquid Clustering is a data layout optimization technique in Delta Lake that replaces traditional Hive-style partitioning and Z-Ordering. It organizes data files based on clustering keys to improve query performance through efficient data skipping.
+
+Evolution
+
+> Hive Partitioning -> Z-Ordering -> Liquid Clustering
+
+LC Features: 
+1. **Incremental** - Optimizes only new or unclustered data; avoids rewriting already clustered files. Efficient for streaming and write-heavy workloads.
+2. **Flexible** - Clustering keys can be updated anytime without full table rewrite. Adapts to evolving query patterns.
+3. **Self-Tuning** - With CLUSTER BY AUTO, Databricks automatically selects optimal keys based on observed query usage.
+
+
+
+```sql
+-- AutoClustering
+-- Best when you are unsure which columns will be most frequently filtered.
+CREATE OR REFRESH STREAMING TABLE my_table
+CLUSTER BY AUTO
+AS SELECT * FROM STREAM source_table;
+```
+
+```sql
+-- CLUSTER BY (columns)
+-- Best when you have strong domain knowledge of your most common filter patterns.
+CREATE OR REFRESH STREAMING TABLE my_table
+CLUSTER BY (region, order_date)
+AS SELECT * FROM STREAM source_table;
+```
+
+### CDC + SCD Type 
+
+Review the code
+
+1. CREATE FLOW customers_scd_type_2_flow AS - Creates a named flow (customers_scd_type_2_flow) that defines how CDC changes will be processed.
+2. AUTO CDC INTO sdp_cdc_2_silver.customers_silver_scd2_demo - Applies the CDC logic to the target Silver table.
+3. FROM STREAM sdp_cdc_1_bronze.customers_bronze_clean_demo - Reads the streaming source data that includes new inserts, updates, and deletes.
+4. KEYS (customer_id) - Identifies the unique customer record by its primary key.
+5. APPLY AS DELETE WHEN operation = "DELETE" - Ensures records with a delete operation are removed from the target.
+6. SEQUENCE BY timestamp_datetime - Orders incoming records so late-arriving data is processed correctly.
+7. COLUMNS * EXCEPT (timestamp, _rescued_data, operation) - Selects all columns from the source except metadata or system fields.
+8. STORED AS SCD TYPE 2 - Specifies the Slowly Changing Dimension Type 2 method, which updates records in place, keeping historical versions.
+9. NOTE: For more information view the Databricks documentation AUTO CDC INTO (Lakeflow Spark Declarative Pipelines).
+
+```sql
+-- b. Perform SCD Type 2 into the silver table
+CREATE FLOW customers_scd_type_2_flow AS 
+AUTO CDC INTO sdp_cdc_2_silver.customers_silver_scd2_demo  -- Target: Where processed records are stored
+FROM STREAM sdp_cdc_1_bronze.customers_bronze_clean_demo   -- Source: Clean CDC records from Bronze layer
+  KEYS (customer_id)                                       -- Primary key: Used to match records for updates/deletes
+  APPLY AS DELETE WHEN operation = "DELETE"                -- Delete logic: Remove records marked as DELETE
+  SEQUENCE BY timestamp_datetime                           -- Ordering: Ensures changes are applied in correct sequence
+  COLUMNS * EXCEPT (timestamp, _rescued_data, operation)   -- Column selection: Include all except metadata fields
+  STORED AS SCD TYPE 2;                                    -- SCD Type 2: Maintains historical versions with __START_AT and __END_AT
+```
