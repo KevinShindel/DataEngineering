@@ -1,5 +1,7 @@
 # The Multiplex Pattern
 
+<hr/> 
+
 The Multiplex pattern addresses a common production challenge: efficiently processing multiple event types that arrive through a single data transport mechanism.
 
 In production environments, multiple business systems often share a single data transport such as:
@@ -19,6 +21,8 @@ In production environments, multiple business systems often share a single data 
 - Source change applied in one place
 
 
+<hr/> 
+
 ## Ingest Once, Fan Out by Type
 
 The Multiplex pattern follows a simple but powerful approach:
@@ -35,13 +39,17 @@ The Multiplex pattern follows a simple but powerful approach:
 - **Simplified monitoring**
 
 
+<hr/> 
 
 ##  Sinks
 
 Sinks provide a mechanism to write streaming data from a Spark Declarative Pipeline to external Delta tables that exist outside the pipeline's managed scope.
 **Only the Python API is supported** — SQL is not supported for sinks. Only append_flow can write to a sink.
 
-### Supported Sink Types
+<hr/> 
+
+## Supported Sink Types
+
 Databricks supports four types of sinks — each suited for a different destination and use case.
 
 1. **Delta Table Sink**
@@ -61,7 +69,10 @@ Databricks supports four types of sinks — each suited for a different destinat
    - Uses PySpark custom data sources
    - Maximum flexibility
 
-### Managed Tables vs. Sinks
+<hr/> 
+
+## Managed Tables vs. Sinks
+
 Every standard dataset in a Spark Declarative Pipeline — streaming table or materialized view — is owned and managed by the pipeline. A sink breaks this intentionally: it lets the pipeline write streaming data to a plain Delta table that exists outside the pipeline's managed scope.
 
 1. **Managed Table (Default)**
@@ -75,7 +86,10 @@ Every standard dataset in a Spark Declarative Pipeline — streaming table or ma
    - Supports Kafka, Event Hubs, custom targets
    - No expectations — append only
 
-###  Delta Sink In Action
+<hr/> 
+
+##  Delta Sink In Action
+
 A Delta sink writes pipeline output to a Delta table outside the pipeline's managed lifecycle — unlocking configurations not possible on pipeline-managed streaming tables, such as Iceberg compatibility.
 
 **Streaming Tables Cannot**:
@@ -86,10 +100,11 @@ A Delta sink writes pipeline output to a Delta table outside the pipeline's mana
 - Enable Iceberg UniForm for cross-platform reads
 
 
-#### Implementation
+<hr/> 
+
+## Implementation
 
 ```python
-
 ## Step 1 — Register the Sink
 from pyspark import pipelines as dp
 dp.create_sink(
@@ -101,7 +116,6 @@ dp.create_sink(
 )
 
 ## Step 2- Write to the Sink
-
 @dp.append_flow(
 name   = "my_sink_flow",
 target = "my_sink"

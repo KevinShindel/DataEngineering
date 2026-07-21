@@ -1,12 +1,14 @@
+# DAB aka Databricks Advanced Bundle
 
+<hr/> 
 
 ## Structure of DAB
 
-project_name - |
-                |-> resources/ <- Additional YAML configs
-                |-> src/ <- contains source files ( notebooks, python files, etc)
-                |-> tests/ <- unit and integration tests
-                |-> databricks.yml <- top-level bundle
+- project_name
+- - **resources** -- Additional YAML configs
+- - **src** -- contains source files ( notebooks, python files, etc)
+- - **tests** -- unit and integration tests
+- **databricks.yml** -- top-level bundle
 
 
 The **databricks.yml** file is a required bundle configuration file used to deploy your
@@ -15,8 +17,9 @@ Databricks assets. This file must:
 - Contain at minimum the top-level bundle mapping.
 - Contain at least one (and only one) bundle configuration file named **databricks.yml**.
 
+<hr/> 
 
-### Top Level Mappings Structure
+## Top Level Mappings Structure
 
 ```yaml
 bundle:
@@ -42,8 +45,9 @@ targets:
 
 ```
 
+<hr/>
 
-### Level of DAB
+## Level of DAB
 
 | Level       | Obligatory | Description                                                                       |
 |-------------|------------|-----------------------------------------------------------------------------------|
@@ -57,8 +61,9 @@ targets:
 | include     | OPTIONAL   | Imports additional YAML files into the bundle configuration.                      | 
 | sync        | OPTIONAL   | Controls local file synchronization behavior with the workspace.                  | 
 
+<hr/>
 
-### DAB delivery
+## DAB delivery
 
 ```shell
 databricks bundle validate
@@ -69,8 +74,9 @@ databricks bundle destroy --auto-approve
 
 ```
 
+<hr/>
 
-### Default Variable in DAB
+## Default Variable in DAB
 
 - ${bundle.name} - Name of bundle 
 - ${bundle.target} - Target environment
@@ -80,8 +86,9 @@ databricks bundle destroy --auto-approve
 - ${resources.models.<model-name>.name} - Name of the model
 - ${resources.pipelines.<pipeline-name>.name} - Name of the pipeline
 
+<hr/>
 
-#### Simple custom variable 
+## Simple custom variable 
 
 ```yaml
 variables:
@@ -90,8 +97,9 @@ variables:
     default: labuser23904
 ```
 
+<hr/>
 
-#### Complex custom variable
+## Complex custom variable
 
 ```yaml
 variables: 
@@ -103,8 +111,9 @@ variables:
       node_type_id: "S
 ```
 
+<hr/>
 
-#### Using variables
+## Using variables
 
 ```yaml
 variables:
@@ -118,8 +127,9 @@ variables:
     description: Production catalog reference
     default: ${var.my_lab_user_name}_3_prod #  labuser23904_3_prod
 ```
+<hr/>
 
-### Lookup Variables
+## Lookup Variables
 
 > Dynamically Retrieve an Object’s Value
 
@@ -145,16 +155,17 @@ my_cluster_id:
 | service_principal        | Service principal variable        | $var.service_principal        |
 | warehouse                | Warehouse variable                | $var.warehouse                |
 
+<hr/>
 
-### Templates 
+## Templates 
 
-Use a Databricks default bundle template to
-create your bundle
-• Templates:
-• default-python
-• default-sql
-• dbt-sql
-• Mlops-stacks
+> Use a Databricks default bundle template to create your bundle.
+
+Templates:
+- default-python
+- default-sql
+- dbt-sql
+- Mlops-stacks
 
 | Template        | Description                                                                                            |
 |-----------------|--------------------------------------------------------------------------------------------------------| 

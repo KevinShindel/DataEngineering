@@ -1,4 +1,4 @@
-
+# Spark Explained
 
 - Available CPU cores = spark.conf.get("spark.executor.cores")
 - Memory Resources = spark.conf.get("spark.executor.memory")
@@ -21,7 +21,9 @@ Analysis → Logical Optimization → Physical Optimization → Code Generation
 - - Runs by default on Databricks SQL warehouses and serverless compute
 - - Can be enabled on All-Purpose and Job Clusters
 
-### DataFrame Schema Definition
+<hr/> 
+
+## DataFrame Schema Definition
 
 - DDL
 ```python
@@ -47,7 +49,9 @@ df = spark.read.csv(path, schema=schema)
 | StructType | STRUCT   | typle, dict  | Named Fields     |
 
 
-### Working with NA
+<hr/> 
+
+## Working with NA
 
 | Operation     | Example                             | Notes | 
 |---------------|-------------------------------------|-------|
@@ -64,9 +68,9 @@ cleaned_df = df.na.drop(
 ```
 
 
-### UDF
+<hr/> 
 
-- by decorator
+## UDF - by decorator
 
 ```python
 

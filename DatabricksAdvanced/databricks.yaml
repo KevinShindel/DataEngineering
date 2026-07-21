@@ -1,43 +1,3 @@
-### Deploying tactics
-
-- Manually ( suing UI, time-consuming)
-- Programmatically (REST API / SDK)
-- [Terraform](https://registry.terraform.io/providers/databricks/databricks/latest/docs) ( challenging )
-- DAB (YAML + CLI)
-
-### Declarative Automation Bundles
-
-1. Using YAML files to specify artifacts, resources and configurations
-2. CLI - have specific bundle commands to validate, deploy and run DAB`s
-
-### Project schema
-
-project_dir
-        |
-        _ resources ( additional DAB's)
-        |
-        _ src ( contains the source files, notebooks, *.py etc )
-        |
-        _ tests ( unit / integration tests for data pipeline )
-        |
-        _ databricks.yaml ( single based top-level bundle mapping )
-
-### Default Bundle Template
-Exist templates:
-- default-python ( Python-based projects )
-- default-sql (SQL-based projects )
-- dbt-sql ( involving Data Build Tool )
-- Mlops-stacks ( for ML operation stacks)
-
-Template generation example: 
-
-```shell
-databricks bundle init default-python
-```
-
-### Top-Lvl mappings
-
-```yaml
 # databricks.yaml
 bundle:
   name: demo-dataengineering-bundle
@@ -105,7 +65,7 @@ resources:
   jobs:
     etl_job:
       email_notifications:
-        on_failure: 
+        on_failure:
           - ${var.admin_email}
       name: etl-job-${bundle.target}
       tasks:
@@ -149,17 +109,3 @@ targets:
       root_path: /Workspace/Users/${workspace.current_user.userName}/.bundle/${bundle.name}/${bundle.target}
     variables:
       catalog: prod_catalog
-```
-
-### Validate / Deploy / Run DAB`s
-
-```shell
-databricks bundle validate
-databricks bundle deploy -t dev
-databricks bundle run -t dev l1_simple_dab
-```
-
-### Remove artifacts ( all bundles, artifacts, jobs etc.)
-
-```shell
-databricks bundle destroy --auto-approve```

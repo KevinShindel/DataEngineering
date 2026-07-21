@@ -1,20 +1,27 @@
 # [Change Data Capture](https://docs.databricks.com/aws/en/data-engineering/what-is-cdc)
 
-### CDC Definition and Purpose
+<hr/> 
+
+## CDC Definition and Purpose
+
 Change Data Capture is a technique used to track and capture changes in data sources like databases, Lakehouses, or data warehouses,
 and then apply those changes to a target table to ensure it reflects the latest state of the source.
 
-**Slowly Changing Dimensions (SCDs)**
+<hr/> 
+
+## **Slowly Changing Dimensions (SCDs)**
 
 CDC is closely tied to the concept of Slowly Changing Dimensions (SCDs),
 which describe how historical data changes are handled in your target system.
 
-We'll focus on two main types:
+**We'll focus on two main types:**
 
 - SCD Type 1 - Overwrites existing data with new values (no history tracking)
 - SCD Type 2 - Preserves history by storing previous versions of records
 
-![CDC Explained](https://cloud.scorm.com/vault/d654995b-6321-4423-b8b5-d9d0c05fc1ef/content/courses/W6FCYNBK2T/scorm_module_cmp5clsyo03xu1upeduymhfv7/1/scormcontent/images/01-cdcoverview-review-b8acc9c22c.png)
+<hr/> 
+
+## CDC Explained
 
 ```sql
 -- CDC Type 1 example
@@ -66,15 +73,16 @@ WHEN NOT MATCHED THEN
     VALUES (s.id, s.name, s.email, s.sing_up_date, s.status)
 ```
 
-### If schema can be changed use schema evolution
+## If schema can be changed use schema evolution
 
 ```sql
 MERGE WITH SCHEMA EVOLTUION target_table_name
 ....
 ```
+
 <hr/>
 
-### Decision Framework
+## Decision Framework
 
 **Choose SCD Type 1 when**:
 
@@ -88,15 +96,14 @@ MERGE WITH SCHEMA EVOLTUION target_table_name
 + Audit trails are required for compliance
 + Point-in-time reporting is needed
 
-### Documentation 
+## Documentation 
 
 1. [AUTO CDC API](https://docs.databricks.com/aws/en/ldp/cdc?language=SQL)
 2. [AUTO CDC INTO](https://docs.databricks.com/aws/en/ldp/developer/ldp-sql-ref-apply-changes-into)
 
 <hr/>
 
-
-### Comparison CDF vs CDC
+## Comparison CDF vs CDC
 
 
 | Feature        | Change Data Feed (CDF)                                                            | Change Data Capture (CDC)                                                 |
@@ -107,8 +114,9 @@ MERGE WITH SCHEMA EVOLTUION target_table_name
 | Efficiency     | Processes only changed rows for operations.                                       | Synchronizes incremental changes from source databases                    |
 | Use Case       | Tracking changes within Databricks                                                | Capturing changes from external sources                                   |
 
+<hr/> 
 
-**CDF Configuration**
+## **CDF Configuration**
 
 Important notes for CDF configuration
 • CDF is **not enabled** by default. It can be enabled;
@@ -117,18 +125,20 @@ Important notes for CDF configuration
 • Change feed can be read by;
 • Version
 • Timestamp
+<hr/> 
 
-**Change Tables Function**
+## **Change Tables Function**
 
 Tracks row-level changes between versions of a Delta table
-• It returns a log of changes to a Delta Lake table with Change Data Feed
-enabled, including inserts, updates, and deletes
-• Leverages metadata columns:
-• _change_type: Specifies the type of change (insert, delete, update_preimage,
-update_postimage
-• _commit_version: The commit version associated with the change
-• _commit_timestamp: The timestamp of the change
-• Syntax:
+- It returns a log of changes to a Delta Lake table with Change Data Feed enabled, including inserts, updates, and deletes
+- Leverages metadata columns:
+- - _change_type: Specifies the type of change (insert, delete, update_preimage, update_postimage)
+- - _commit_version: The commit version associated with the change
+- - _commit_timestamp: The timestamp of the change
+
+<hr/> 
+
+## **Syntax**
 
 ```sql
 table_changes(table_name, start, [end])

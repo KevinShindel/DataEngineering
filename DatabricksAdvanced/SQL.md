@@ -1,6 +1,6 @@
 
 
-# Create table by file
+## Create table by file
 
 ```sql
 CREATE TABLE IF NOT EXISTS sales_csv
@@ -17,7 +17,7 @@ OPTIONS (
 LOCATION "${path.sales.csv}"
 ```
 
-# Extract data from external SQL DB
+## Extract data from external SQL DB
 
 ```sql
 CREATE TABLE users_jdbc
@@ -29,7 +29,7 @@ OPTIONS (
 ```
 
 
-# UDF
+## UDF
 
 ```sql
 CREATE OR REPLACE FUNCTION sale_announcement(item_name STRING, item_price INT)

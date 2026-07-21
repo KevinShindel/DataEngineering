@@ -1,9 +1,12 @@
 # Expectations
 
-The Limits of Basic Expectations: 
+<hr/> 
 
-A NOT NULL check confirms that a field is present — but presence alone does not mean a value is correct. 
-The table below shows the range of quality problems that appear in real production data, and whether a basic NOT NULL check catches them.
+**The Limits of Basic Expectations:** 
+
+1. A NOT NULL check confirms that a field is present — but presence alone does not mean a value is correct.
+2. The table below shows the range of quality problems that appear in real production data, and whether a basic NOT NULL check catches them.
+
 
 | Problem Type	           | Example	                                              | NOT NULL catches it?	 | Advanced Expectation? |
 |-------------------------|-------------------------------------------------------|-----------------------|-----------------------|
@@ -69,7 +72,7 @@ GROUP BY pk
 > By storing all incoming fields as STRING, - you accept whatever the source sends — integers, decimals,
 > mixed types — and defer type enforcement to silver where TRY_CAST handles failures gracefully.
 
-#### Bronze — Accept Everything
+## Bronze — Accept Everything
 
 - All fields inferred as STRING. Type mismatches never fail the pipeline — an integer in a string field is just a string.
 - 
@@ -84,7 +87,7 @@ FROM STREAM read_files(
 )
 ```
 
-#### Silver — Enforce Types Safely
+## Silver — Enforce Types Safely
 
 > TRY_CAST returns NULL on cast failure instead of halting the pipeline. The NULL-tolerant constraint pattern then handles the rest.
 
@@ -100,12 +103,15 @@ AS SELECT *,
 FROM STREAM bronze_events
 ```
 
+<hr/> 
 
 ## Schema Evolution Tools at the Bronze Layer
 
 Two built-in mechanisms cover the full lifecycle of schema change — schemaHints for columns you know are coming, and _rescued_data as the last line of defense for anything unexpected.
 
-#### schemaHints — Declare Future Columns Today
+<hr/> 
+
+## schemaHints — Declare Future Columns Today
 
 - Declare columns expected in upcoming files before they arrive. When the new column appears, it populates automatically. Records before the evolution carry NULL — backward and forward compatible simultaneously.
 
@@ -121,7 +127,10 @@ FROM STREAM read_files(
 -- Old records: loyalty_tier = NULL (acceptable)
 -- New records: loyalty_tier populated automatically
 ```
-#### _rescued_data — Last Line of Defence
+
+<hr/> 
+
+## _rescued_data — Last Line of Defence
 
 - Any field arriving outside the declared schema — unexpected columns, type mismatches — is captured as JSON in _rescued_data.
 - Nothing is silently discarded. Query it at any time for investigation or recovery.
@@ -140,13 +149,17 @@ WHERE _rescued_data IS NOT NULL
 Any constraint written for that column must use the NULL-tolerant CASE WHEN pattern — otherwise every historic record fails the constraint,
 causing widespread false violations in the pipeline UI.
 
+<hr/> 
+
 ## The Quarantine Pattern
 
 > The quarantine pattern routes every incoming record through quality evaluation, then splits output into two paths based on results—clean path for analytics and quarantine path for remediation.
 > Key Guarantee: No record is ever dropped
 > Mathematical Relationship: Total Records In = Clean Records + Quarantine Records
 
-#### Zero Data Loss with Inverse Logic
+<hr/> 
+
+## Zero Data Loss with Inverse Logic
 
 **Step 1 — Quarantine Table with Inverse Logic**
 
@@ -187,6 +200,8 @@ AS SELECT * FROM trips_quarantine
 WHERE is_quarantined = TRUE;
 ```
 
+<hr/> 
+
 ## Choosing Between DROP ROW and Quarantine
 
 > Both strategies enforce data quality, but they differ fundamentally in what happens to invalid records.
@@ -202,9 +217,9 @@ The right choice depends on whether your business needs an audit trail, recovery
 | Pipeline complexity  | Low — single table                               | Moderate — temp table + 2 views                                   |
 | Best for             | Non-critical streams with well-established rules | Production pipelines with compliance, audit, or remediation needs |
 
+<hr/> 
 
-
-### Quality metrics check
+## Quality metrics check
 
 
 ```sql

@@ -1,11 +1,8 @@
-## Recommended literature
+# PySpark Transformations
 
-- [DataFrame — PySpark 4.0.0 documentation](https://spark.apache.org/docs/latest/api/python/reference/pyspark.sql/dataframe.html)
-- [Column — PySpark 4.0.0 documentation](https://spark.apache.org/docs/latest/api/python/reference/pyspark.sql/column.html)
-- [Functions — PySpark 4.0.0 documentation](https://spark.apache.org/docs/latest/api/python/reference/pyspark.sql/functions.html)
-- [Grouping — PySpark 4.0.0 documentation](https://spark.apache.org/docs/latest/api/python/reference/pyspark.sql/grouping.html)
+<hr/>
 
-
+## Array Functions
 
 | Function                 | Purpose                              | Example                    |
 |--------------------------|--------------------------------------|----------------------------|
@@ -17,7 +14,9 @@
 | collect_set(col)         | Do the same but without duplicates   | collect_set('product')     |
 | explode(col)             | Unest the array                      | explode(items)             | 
 
-### Complex Data 
+<hr/>
+
+## Complex Data 
 
 ```python
 from pyspark.sql import functions as F
@@ -45,6 +44,8 @@ exploded_df.where(F.size('items') > 2)
             .agg(F.collect_set('event_name').alias('event_history'),
                  F.array_distinct(F.flatten('item.item_id')).alias('cart_history')))
 ```
+<hr/>
+
 ### convert json into StructType
 
 ```python
@@ -76,7 +77,9 @@ raw_df.select(
 )
 ```
 
-#### Accessing to related fields
+<hr/>
+
+## Accessing to related fields
 
 ```python
 df.select(
@@ -86,40 +89,47 @@ df.select(
 )
 ```
 
-#### Unnesting nested data in arrays
+<hr/>
+
+## Unnesting nested data in arrays
 
 ```python
-
-# 1, ['a','b','c']]
-
-df.select(
-    'id', F.explode('items').alias('item')
-)
+df = df.select('id', F.explode('items').alias('item'))
 ```
 
-### GroupBy using expressions
+<hr/>
+
+## GroupBy using expressions
 
 ```python
-(df.groupBy(F.col('department'). F.year('hire_date')).sum('revenue'))
+df = df.groupBy(
+    F.col('department'),
+    F.year('hire_date')
+    ).sum('revenue')
 ```
 
-### Combining Multiple Aggregations
+<hr/>
+
+## Combining Multiple Aggregations
 
 ```python
-(df.groupBy('department')
- .agg(
-    F.sum('salary').alias('total_salary'),
-    F.avg('age').alias('avg_age')
-))
-
-(df.groupBy('department')
- .agg({
-    "salary": "sum",
-    "age": "avg"
-}))
+# use pyspark function for aggregation
+df = (df.groupBy('department')
+        .agg(
+            F.sum('salary').alias('total_salary'),
+            F.avg('age').alias('avg_age')
+        ))
+# use dictionary for aggregation 
+df = (df.groupBy('department')
+        .agg({
+            "salary": "sum",
+            "age": "avg"
+        }))
 ```
 
-### Window Functions
+<hr/>
+
+## Window Functions
 
 ```python
 from pyspark.sql.window import Window
@@ -144,7 +154,9 @@ ranked_loc = (
 )
 ```
 
-### Pivoting
+<hr/>
+
+## Pivoting
 
 ```python
 pivoted_df = (df.groupBy('user_id')
@@ -152,3 +164,10 @@ pivoted_df = (df.groupBy('user_id')
               .agg(F.count('product_id').alias('quantity_purchased'))
               .fillna(0))
 ```
+
+## Recommended literature
+
+- [DataFrame — PySpark 4.0.0 documentation](https://spark.apache.org/docs/latest/api/python/reference/pyspark.sql/dataframe.html)
+- [Column — PySpark 4.0.0 documentation](https://spark.apache.org/docs/latest/api/python/reference/pyspark.sql/column.html)
+- [Functions — PySpark 4.0.0 documentation](https://spark.apache.org/docs/latest/api/python/reference/pyspark.sql/functions.html)
+- [Grouping — PySpark 4.0.0 documentation](https://spark.apache.org/docs/latest/api/python/reference/pyspark.sql/grouping.html)
