@@ -184,3 +184,57 @@ Templates:
 
 - databricks bundle init /projects/templates/test-template
 - To use a custom bundle template, pass its local path or remote URL to the Databricks CLI bundle init command.
+
+### Complex Task runs
+
+```yaml
+resources:
+    jobs:
+        job1_simple_lab:
+            name: job1_simple_lab
+            max_concurrent_runs: 1 # Only one run of this job can execute at a time
+            queue:
+              enabled: false # Disable the job queue
+            schedules:
+              - name: daily_schedule
+                cron: "0 0 * * *" # Run the job every day at midnight
+                timezone: "UTC"
+                pause_status: "UNPAUSED"
+            parameters:
+              - name: input_path
+                type: string
+                default: "/mnt/data/input"
+              - name: output_path
+                type: string
+                default: "/mnt/data/output"
+            tasks:
+                
+                # SQL TASK EXAMPLE
+                - task_key: simple_task
+                  sql_task:
+                    warehouse_id: ${var.my_warehouse_id}
+                    parameters:
+                      catalog: ${var.catalog_dev}
+                      schema: ${var.schema_dev}
+                    file: ./src/simple_task.sql
+                
+                # JOB-TASK TASK EXAMPLE
+                - task_key: load_silver_data
+                  depends_on:
+                    - simple_task
+                  run_job_task: # use run_job_task to run another job as a task
+                    job_id: ${resources.jobs.job1_simple_lab.id}
+                  
+                # PYTHON TASK EXAMPLE
+                - task_key: create_gold_table
+                  spark_python_task:
+                    python_file: ./src/gold/create_gold_table.py
+                    parameters:
+                      - ${var.input_path}
+                      - ${var.output_path}
+                    existing_cluster_id: ${var.my_cluster_id}
+                    libraries:
+                      - whl: ../dist/*.whl
+                  depends_on:
+                    - load_silver_data
+```
